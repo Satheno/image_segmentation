@@ -3,23 +3,41 @@ import sys
 if not sys.path.__contains__("D:\\Projects\\Python\\image_segmentation"):
     sys.path.append("D:\\Projects\\Python\\image_segmentation")
 import numpy as np
-import matplotlib.pyplot as plt
 from src.DatasetGenerator import CurveDatasetGenerator, VoronoiDatasetGenerator
 from src.Visualizer import CurveVisualizer, VoronoiVisualizer
+from src.RegionGrowing import RegionGrowing
 
 if __name__ == '__main__':
-    # vor = pv.compute_voronoi([[.1, .1, .1], [.9, .9, .9]], [[0, 1], [0, 1], [0, 1]], .2)
+    # Data selection and inverted grey values setting
+    curves = True
+    voronoi = False
+    inverted_grey_values = True
 
-    # gen = CurveDatasetGenerator(3, 10, 80, 4, .2, 20, 842)
-    # gen.generate_and_save_dataset("../datasets/test_set/")
-    # dataset, description = gen.load_dataset("../datasets/test_set/")
-    # vis = CurveVisualizer(16, True, True)
-    # vis.draw_original(dataset[0])
-    # vis.draw_pixel(dataset[0])
-    gen = VoronoiDatasetGenerator(1, 100, 15)
-    ds, desc = gen.generate_dataset()
-    vis = VoronoiVisualizer(50, max_dist=0.02, inverted_grey_values=False, alpha_voxels=False)
-    # vis.draw_original(ds[0])
-    vis.draw_pixel(ds[0])
+    if curves:
+        # Curve Generation
+        gen = CurveDatasetGenerator(3, 10, 80, 4, .2, 20, 842)
+        dataset, description = gen.load_dataset("../datasets/test_set/")
+        # Curve visualization
+        cur_vis = CurveVisualizer(64, True, inverted_grey_values, alpha_voxels=False)
+        cur_vis.draw_original(dataset[0])
+        eight_bit, clustering_truth = cur_vis.draw_pixel(dataset[0])
+
+    if voronoi:
+        # Voronoi Generation
+        gen = VoronoiDatasetGenerator(1, 100, 10)
+        ds, desc = gen.generate_dataset()
+        # Voronoi visualization
+        vor_vis = VoronoiVisualizer(50, inverted_grey_values, max_dist=0.02, alpha_voxels=False)
+        vor_vis.draw_original(ds[0])
+        eight_bit, clustering_truth = vor_vis.draw_pixel(ds[0])
+
+    if curves != voronoi:
+        # Algorithm (3D region growing) execution
+        grower = RegionGrowing(inverted_grey_values, variant="voronoi" if voronoi else "curve")
+        clustering = grower.grow(eight_bit.astype(int))
+
+        # Evaluation of the resulting clustering
+        rands_index, information_variance = grower.check_results(clustering, clustering_truth)
+        print(f"Rands Index: {rands_index}\nInformation Variation: {information_variance}")
 
     print("IDE Debug Breakpoint")

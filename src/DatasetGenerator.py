@@ -6,6 +6,7 @@ import os
 import splipy.curve_factory as curve_factory
 from scipy.spatial.distance import cdist
 from itertools import combinations
+from tqdm import tqdm
 
 
 class DatasetGenerator:
@@ -149,6 +150,15 @@ class CurveDatasetGenerator(DatasetGenerator):
         return instance
 
     def load_dataset(self, folder: str):
+        """
+        Function that loads a curve dataset from a folder that was previously saved with the generate_and_save_dataset
+        function. Additionally the function checks some parameters with which the dataset was created and raises an
+        Error if at least one parameter doesn't match
+
+        :param folder: The folder containing the voronoi dataset in different instance (.pkl) files and a description
+            (.pkl) file
+        :return: 2-tuple containing the dataset (list of instances) and the description (dictionary)
+        """
         # just in case the user forgot to add a / to the end of his path
         if folder[-1] != "/":
             folder += "/"
@@ -222,7 +232,7 @@ class VoronoiDatasetGenerator(DatasetGenerator):
                        "block_size": self._block_size}
         return dataset, description
 
-    def _generate_instance(self, verbose: bool = True):
+    def _generate_instance(self, verbose: bool = False):
         '''
         Internal function used by the generate_dataset and generate_and_save_dataset function to generate problem
         instances according to the given parameters when the VoronoiDataSetGenerator was created.
@@ -244,7 +254,7 @@ class VoronoiDatasetGenerator(DatasetGenerator):
 
         # merge cells until only <_num_end_cells> cells are left
         merge_count = 0
-        while len(instance) > self._num_end_cells:
+        for _ in tqdm(range(len(instance) - self._num_end_cells), "Instance Cell Merging"):
             merge_count += 1
             # choose cell begin with
             cell_idx_01 = random.randint(0, len(instance) - 1)
@@ -547,7 +557,8 @@ class VoronoiDatasetGenerator(DatasetGenerator):
                 # map the vertex indices in the face to cell 01 vertex indices before appending them
                 face["vertices"] = [c2_c1_mapping[elem] for elem in face["vertices"]]
                 instance[cell_idx_01]["faces"].append(face)
-            elif not np.any([np.array_equal(face["vertices"], face_vertices) for face_vertices in mapped_faces_c2]):
+            elif not np.any([np.array_equal(sorted([c2_c1_mapping[elem] for elem in face["vertices"]]), face_vertices)
+                             for face_vertices in mapped_faces_c2]):
                 face["vertices"] = [c2_c1_mapping[elem] for elem in face["vertices"]]
                 instance[cell_idx_01]["faces"].append(face)
 
@@ -604,6 +615,15 @@ class VoronoiDatasetGenerator(DatasetGenerator):
         return instance
 
     def load_dataset(self, folder: str):
+        """
+        Function that loads a voronoi dataset from a folder that was previously saved with the generate_and_save_dataset
+        function. Additionally the function checks some parameters with which the dataset was created and raises an
+        Error if at least one parameter doesn't match
+
+        :param folder: The folder containing the voronoi dataset in different instance (.pkl) files and a description
+            (.pkl) file
+        :return: 2-tuple containing the dataset (list of instances) and the description (dictionary)
+        """
         # just in case the user forgot to add a / to the end of his path
         if folder[-1] != "/":
             folder += "/"
