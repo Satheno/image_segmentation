@@ -9,27 +9,29 @@ from src.RegionGrowing import RegionGrowing
 
 if __name__ == '__main__':
     # Data selection and inverted grey values setting
-    curves = True
-    voronoi = False
+    curves = False
+    voronoi = True
     inverted_grey_values = True
 
     if curves:
         # Curve Generation
-        gen = CurveDatasetGenerator(3, 10, 80, 4, .2, 20, 842)
-        dataset, description = gen.load_dataset("../datasets/test_set/")
+        gen = CurveDatasetGenerator(1, 20, 80, 4, .15, 25, 3451)
+        # gen.generate_and_save_dataset("../datasets/curve_10/")
+        dataset, desc = gen.generate_dataset()
         # Curve visualization
-        cur_vis = CurveVisualizer(64, True, inverted_grey_values, alpha_voxels=False)
+        cur_vis = CurveVisualizer(40, 6, inverted_grey_values, alpha_voxels=False)
         cur_vis.draw_original(dataset[0])
         eight_bit, clustering_truth = cur_vis.draw_pixel(dataset[0])
 
     if voronoi:
         # Voronoi Generation
-        gen = VoronoiDatasetGenerator(1, 100, 10)
-        ds, desc = gen.generate_dataset()
+        gen = VoronoiDatasetGenerator(1, 300, 15, seed=4791)
+        # gen.generate_and_save_dataset("../datasets/voronoi_10/")
+        dataset, desc = gen.generate_dataset()
         # Voronoi visualization
-        vor_vis = VoronoiVisualizer(50, inverted_grey_values, max_dist=0.02, alpha_voxels=False)
-        vor_vis.draw_original(ds[0])
-        eight_bit, clustering_truth = vor_vis.draw_pixel(ds[0])
+        vor_vis = VoronoiVisualizer(40, inverted_grey_values, max_dist=0.02, alpha_voxels=False)
+        vor_vis.draw_original(dataset[0])
+        eight_bit, clustering_truth = vor_vis.draw_pixel(dataset[0])
 
     if curves != voronoi:
         # Algorithm (3D region growing) execution
@@ -37,7 +39,9 @@ if __name__ == '__main__':
         clustering = grower.grow(eight_bit.astype(int))
 
         # Evaluation of the resulting clustering
-        rands_index, information_variance = grower.check_results(clustering, clustering_truth)
+        rands_index, information_variance = grower.evaluate(clustering, clustering_truth)
         print(f"Rands Index: {rands_index}\nInformation Variation: {information_variance}")
+    else:
+        print("Select only one Dataset Type (Voronoi or Curves). Currently both types have the same boolean value.")
 
     print("IDE Debug Breakpoint")

@@ -25,7 +25,7 @@ class RegionGrowing:
         self._neighbor_count = neighbor_count
         if self._inverted_grey_values:
             self._lower_threshold = 127 if self._variant == "voronoi" else -1
-            self._upper_threshold = 256 if self._variant == "voronoi" else 129
+            self._upper_threshold = 256 if self._variant == "voronoi" else 128
         else:
             self._lower_threshold = -1 if self._variant == "voronoi" else 127
             self._upper_threshold = 128 if self._variant == "voronoi" else 256
@@ -43,7 +43,7 @@ class RegionGrowing:
         :return: np.array with shape (x^3,) containing the labels for every point in the 3d array
         """
         # setup calculation
-        clusters = np.full(np.prod(img_3d.shape), -100)
+        clusters = np.full(np.prod(img_3d.shape), 99999)
         avail_coords = []
         dim = img_3d.shape[0]
         dim2 = dim ** 2
@@ -166,7 +166,7 @@ class RegionGrowing:
     def _preprocess_labels(self, clustering, clustering_truth, removed_boundary=False, adapted_labels=False):
         """
         Helper function used to preprocess the the label np.arrays. The function removes all boundary labels, i.e.
-        entries with value -100 and maps the calculated RG labels to the ground truth labels (see
+        entries with value 99999 and maps the calculated RG labels to the ground truth labels (see
         _calculate_label_mapping for details)
 
         :param clustering: np.array with shape (num_points,) containing the guessed integer labels for the points
@@ -177,9 +177,10 @@ class RegionGrowing:
             labels or not
         :return: preprocessed RG calculated labels and ground truth labels
         """
-        if not removed_boundary:
-            clustering = np.delete(clustering, np.where(clustering == -100))
-            clustering_truth = np.delete(clustering_truth, np.where(clustering_truth == -100))
+        # TODO: remove the "remove boundary" section
+        #if not removed_boundary:
+        #    clustering = np.delete(clustering, np.where(clustering == 99999))
+        #    clustering_truth = np.delete(clustering_truth, np.where(clustering_truth == 99999))
         if not adapted_labels:
             mapping = self._calculate_label_mapping(clustering, clustering_truth)
             clustering = np.array([mapping[elem] for elem in clustering])
